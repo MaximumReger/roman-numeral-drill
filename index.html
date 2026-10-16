@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roman Numeral Drill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+<style>
+  /* Layout: one centered practice desk — mode banner, engraved score, two answer fields beneath. */
+  :root {
+    --bg: #eef1f4;
+    --paper: #fbfcfd;
+    --ink: #1b2330;
+    --muted: #5d6878;
+    --rule: #d3d9e1;
+    --accent: #2f4a8a;
+    --good: #1f7a45;
+    --bad: #c0352b;
+    --font-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+    --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161d; --paper: #1b212b; --ink: #e4e9f0; --muted: #98a3b3;
+      --rule: #2e3644; --accent: #8fa8e8; --good: #4cc27c; --bad: #ff6b5e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12161d; --paper: #1b212b; --ink: #e4e9f0; --muted: #98a3b3;
+    --rule: #2e3644; --accent: #8fa8e8; --good: #4cc27c; --bad: #ff6b5e;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5;
+    padding-block: 2rem 3rem;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main {
+    max-width: 34rem;
+    margin: 0 auto;
+    display: grid;
+    gap: 1.25rem;
+  }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+  h1 {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0;
+  }
+  .streak { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .sheet {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.25rem 1.25rem 0.75rem;
+  }
+  .mode {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.9rem, 6vw, 2.4rem);
+    line-height: 1.1;
+    margin: 0;
+    text-align: center;
+  }
+  .mode small {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  #score { color: var(--ink); display: flex; justify-content: center; }
+  #score svg { width: 100%; max-width: 360px; height: auto; display: block; }
+
+  form { display: grid; gap: 1rem; }
+  .field { display: grid; gap: 0.35rem; }
+  .field label { font-weight: 600; font-size: 0.9rem; }
+  .row { display: flex; align-items: center; gap: 0.75rem; }
+  .row input {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    padding: 0.6rem 0.75rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1.5px solid var(--rule);
+    border-radius: 5px;
+  }
+  .row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+  .row input.ok { border-color: var(--good); }
+  .row input.no { border-color: var(--bad); }
+  .row input:disabled { opacity: 1; }
+  .mark { width: 1.75rem; height: 1.75rem; flex: none; display: grid; place-items: center; }
+  .mark svg { width: 100%; height: 100%; }
+  .mark.ok { color: var(--good); }
+  .mark.no { color: var(--bad); }
+  .msg { font-size: 0.85rem; min-height: 1.3em; margin: 0; }
+  .msg.no { color: var(--bad); }
+  .msg.ok { color: var(--good); }
+  .hint { font-size: 0.8rem; color: var(--muted); margin: 0; }
+  .hint code { font-family: var(--font-mono); font-size: 0.95em; }
+
+  .actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  button {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.6rem 1.4rem;
+    border-radius: 5px;
+    border: 1.5px solid var(--accent);
+    background: var(--accent);
+    color: var(--paper);
+    cursor: pointer;
+  }
+  button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+  button.ghost { background: transparent; color: var(--accent); }
+  button.link { background: none; border: none; color: var(--muted); padding: 0.6rem 0.25rem; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; margin-left: auto; }
+  #nextBtn { background: var(--good); border-color: var(--good); }
+  .answer { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
+  .fig { display: inline-flex; flex-direction: column; font-size: 0.6em; line-height: 1; vertical-align: 0.2em; margin-left: 0.05em; font-family: var(--font-body); }
+  @media (prefers-reduced-motion: no-preference) {
+    .mark svg { animation: pop 0.18s ease-out; }
+    @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Roman Numeral Drill</h1>
+    <span class="streak" id="streak">Streak 0</span>
+  </header>
+
+  <section class="sheet" aria-label="Musical example">
+    <p class="mode"><small>Mode</small><span id="mode">Major</span></p>
+    <div id="score" role="img" aria-label="Four-voice chord on a grand staff"></div>
+  </section>
+
+  <form id="form" autocomplete="off" novalidate>
+    <div class="field">
+      <label for="keyInput">Key</label>
+      <div class="row">
+        <input id="keyInput" type="text" placeholder="e.g. E♭ major, Eb, f# minor" spellcheck="false">
+        <span class="mark" id="keyMark" aria-live="polite"></span>
+      </div>
+      <p class="msg" id="keyMsg"></p>
+    </div>
+    <div class="field">
+      <label for="rnInput">Roman numeral and figure</label>
+      <div class="row">
+        <input id="rnInput" type="text" placeholder="e.g. V65, viio7, ii6, iiø43" spellcheck="false">
+        <span class="mark" id="rnMark" aria-live="polite"></span>
+      </div>
+      <p class="msg" id="rnMsg"></p>
+    </div>
+    <p class="hint">Type <code>o</code> for °, <code>ø</code> or <code>/o</code> for ø. Figures: <code>6</code>, <code>64</code>, <code>7</code>, <code>65</code>, <code>43</code>, <code>42</code> (slashes are fine). Upper case for major, lower case for minor and diminished.</p>
+    <div class="actions">
+      <button type="submit" id="checkBtn">Check</button>
+      <button type="button" id="nextBtn" hidden>Next</button>
+      <button type="button" class="link" id="revealBtn">Show answer</button>
+    </div>
+    <p class="answer" id="answer" hidden></p>
+  </form>
+</main>
+
+<script>
+(() => {
+  const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
+  const NAT = [0, 2, 4, 5, 7, 9, 11];
+  const STEPS = {
+    major: [0, 2, 4, 5, 7, 9, 11],
+    natural: [0, 2, 3, 5, 7, 8, 10],
+    harmonic: [0, 2, 3, 5, 7, 8, 11],
+  };
+  const MAJOR_KEYS = ["C", "G", "D", "A", "E", "B", "F#", "F", "Bb", "Eb", "Ab", "Db", "Gb"];
+  const MINOR_KEYS = ["A", "E", "B", "F#", "C#", "G#", "D#", "D", "G", "C", "F", "Bb", "Eb"];
+  const NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII"];
+
+  // Diatonic chords allowed per mode (augmented triads and major sevenths excluded).
+  // scale: which scale the chord is built from.
+  const CHORDS = {
+    major: [
+      ...[0, 1, 2, 3, 4, 5, 6].map(deg => ({ deg, sev: false, scale: "major" })),
+      ...[1, 2, 4, 5, 6].map(deg => ({ deg, sev: true, scale: "major" })),
+    ],
+    minor: [
+      { deg: 0, sev: false, scale: "natural" },  // i
+      { deg: 1, sev: false, scale: "natural" },  // ii°
+      { deg: 2, sev: false, scale: "natural" },  // III
+      { deg: 3, sev: false, scale: "natural" },  // iv
+      { deg: 4, sev: false, scale: "harmonic" }, // V
+      { deg: 5, sev: false, scale: "natural" },  // VI
+      { deg: 6, sev: false, scale: "harmonic" }, // vii°
+      { deg: 6, sev: false, scale: "natural" },  // VII
+      { deg: 0, sev: true, scale: "natural" },   // i7
+      { deg: 1, sev: true, scale: "natural" },   // iiø7
+      { deg: 3, sev: true, scale: "natural" },   // iv7
+      { deg: 4, sev: true, scale: "harmonic" },  // V7
+      { deg: 6, sev: true, scale: "harmonic" },  // vii°7
+    ],
+  };
+
+  const RANGES = { B: [40, 60], T: [48, 67], A: [55, 72], S: [60, 79] };
+
+  const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+  const pcOf = n => (NAT[n.letter] + n.acc + 120) % 12;
+  const midiOf = n => 12 * (n.oct + 1) + NAT[n.letter] + n.acc;
+  const same = (a, b) => a.letter === b.letter && a.acc === b.acc;
+  const accText = acc => ["𝄫", "♭", "", "♯", "𝄪"][acc + 2];
+  const pitchName = n => LETTERS[n.letter] + accText(n.acc);
+
+  function parseTonicStr(s) {
+    const letter = LETTERS.indexOf(s[0]);
+    const acc = s[1] === "#" ? 1 : s[1] === "b" ? -1 : 0;
+    return { letter, acc };
+  }
+
+  function buildScale(tonic, type) {
+    const tpc = pcOf(tonic);
+    return STEPS[type].map((step, d) => {
+      const letter = (tonic.letter + d) % 7;
+      const pc = (tpc + step) % 12;
+      const acc = ((pc - NAT[letter] + 18) % 12) - 6;
+      return { letter, acc };
+    });
+  }
+
+  function chordQuality(tones) {
+    const iv = tones.map(t => (pcOf(t) - pcOf(tones[0]) + 12) % 12);
+    const tri = iv[1] === 4 && iv[2] === 7 ? "M" : iv[1] === 3 && iv[2] === 7 ? "m" : iv[1] === 3 && iv[2] === 6 ? "d" : "aug";
+    if (tones.length === 3) return tri;
+    const s = iv[3];
+    if (tri === "M" && s === 10) return "Mm7";
+    if (tri === "m" && s === 10) return "mm7";
+    if (tri === "d" && s === 10) return "hd7";
+    if (tri === "d" && s === 9) return "dd7";
+    return "other";
+  }
+
+  function romanHTML(deg, quality, inv) {
+    const upper = quality === "M" || quality === "Mm7";
+    let s = upper ? NUMERALS[deg] : NUMERALS[deg].toLowerCase();
+    if (quality === "d" || quality === "dd7") s += "°";
+    if (quality === "hd7") s += "ø";
+    const sev = quality.endsWith("7");
+    const figs = sev ? [["7"], ["6", "5"], ["4", "3"], ["4", "2"]][inv] : [[], ["6"], ["6", "4"]][inv];
+    if (figs.length === 1) s += `<sup style="font-size:0.6em">${figs[0]}</sup>`;
+    if (figs.length === 2) s += `<span class="fig"><span>${figs[0]}</span><span>${figs[1]}</span></span>`;
+    return s;
+  }
+
+  // Enumerate every SATB voicing that satisfies range, spacing and doubling rules.
+  function voicings(tones, inv, quality, leadingTone) {
+    const cands = {};
+    for (const v of ["B", "T", "A", "S"]) {
+      cands[v] = [];
+      tones.forEach((t, member) => {
+        for (let oct = 1; oct <= 6; oct++) {
+          const n = { letter: t.letter, acc: t.acc, oct, member };
+          n.midi = midiOf(n);
+          if (n.midi >= RANGES[v][0] && n.midi <= RANGES[v][1]) cands[v].push(n);
+        }
+      });
+    }
+    const sev = tones.length === 4;
+    const out = [];
+    for (const b of cands.B) {
+      if (b.member !== inv) continue;
+      for (const t of cands.T) {
+        if (t.midi <= b.midi || t.midi - b.midi > 19) continue;
+        for (const a of cands.A) {
+          if (a.midi <= t.midi || a.midi - t.midi > 12) continue;
+          for (const s of cands.S) {
+            if (s.midi <= a.midi || s.midi - a.midi > 12) continue;
+            const v = [b, t, a, s];
+            const count = [0, 0, 0, 0];
+            v.forEach(n => count[n.member]++);
+            if (sev) {
+              if (count.some(c => c !== 1)) continue;
+            } else {
+              if (count[0] === 0 || count[1] === 0 || count[2] === 0) continue;
+              const doubled = count.indexOf(2);
+              if (leadingTone && same(tones[doubled], leadingTone)) continue;
+              if (quality === "d") { if (doubled !== 1) continue; }
+              else if (inv === 0 && doubled !== 0) continue;
+              else if (inv === 1 && doubled === 1) continue;
+              else if (inv === 2 && doubled !== 2) continue;
+            }
+            out.push(v);
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  function generate() {
+    for (let tries = 0; tries < 50; tries++) {
+      const mode = Math.random() < 0.5 ? "major" : "minor";
+      const tonicStr = rand(mode === "major" ? MAJOR_KEYS : MINOR_KEYS);
+      const tonic = parseTonicStr(tonicStr);
+      const def = rand(CHORDS[mode]);
+      const scale = buildScale(tonic, def.scale);
+      const sigScale = buildScale(tonic, mode === "major" ? "major" : "natural");
+      const leadingTone = buildScale(tonic, mode === "major" ? "major" : "harmonic")[6];
+      const tones = (def.sev ? [0, 2, 4, 6] : [0, 2, 4]).map(i => scale[(def.deg + i) % 7]);
+      const quality = chordQuality(tones);
+      if (quality === "aug" || quality === "other") continue;
+      const invChoices = def.sev ? [0, 1, 2, 3] : quality === "d" ? [0, 1] : [0, 1, 2];
+      const inv = rand(invChoices);
+      const vs = voicings(tones, inv, quality, leadingTone);
+      if (!vs.length) continue;
+      const keySig = {};
+      sigScale.forEach(n => (keySig[n.letter] = n.acc));
+      return {
+        mode, tonic, deg: def.deg, quality, inv, voicing: rand(vs), keySig,
+        vfKey: tonicStr + (mode === "minor" ? "m" : ""),
+      };
+    }
+    throw new Error("Could not generate an example");
+  }
+
+  // ---------- Rendering ----------
+  function render(ex) {
+    const VF = Vex.Flow;
+    const el = document.getElementById("score");
+    el.innerHTML = "";
+    const W = 340, H = 245;
+    const renderer = new VF.Renderer(el, VF.Renderer.Backends.SVG);
+    renderer.resize(W, H);
+    const ctx = renderer.getContext();
+    ctx.setFillStyle("currentColor");
+    ctx.setStrokeStyle("currentColor");
+    const x = 34, w = W - x - 10;
+    const treble = new VF.Stave(x, 20, w).addClef("treble").addKeySignature(ex.vfKey);
+    const bass = new VF.Stave(x, 130, w).addClef("bass").addKeySignature(ex.vfKey);
+    const start = Math.max(treble.getNoteStartX(), bass.getNoteStartX());
+    treble.setNoteStartX(start);
+    bass.setNoteStartX(start);
+    treble.setContext(ctx).draw();
+    bass.setContext(ctx).draw();
+    for (const type of ["BRACE", "SINGLE_LEFT", "SINGLE_RIGHT"]) {
+      new VF.StaveConnector(treble, bass).setType(VF.StaveConnector.type[type]).setContext(ctx).draw();
+    }
+    const [b, t, a, s] = ex.voicing;
+    const mk = (clef, notes) => {
+      const sn = new VF.StaveNote({
+        clef, duration: "w",
+        keys: notes.map(n => `${LETTERS[n.letter].toLowerCase()}/${n.oct}`),
+      });
+      notes.forEach((n, i) => {
+        if (n.acc !== ex.keySig[n.letter]) {
+          sn.addModifier(new VF.Accidental(["bb", "b", "n", "#", "##"][n.acc + 2]), i);
+        }
+      });
+      return sn;
+    };
+    const tv = new VF.Voice({ num_beats: 4, beat_value: 4 }).addTickables([mk("treble", [a, s])]);
+    const bv = new VF.Voice({ num_beats: 4, beat_value: 4 }).addTickables([mk("bass", [b, t])]);
+    new VF.Formatter().joinVoices([tv]).joinVoices([bv]).format([tv, bv], x + w - start - 20);
+    tv.draw(ctx, treble);
+    bv.draw(ctx, bass);
+    const svg = el.querySelector("svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
+    svg.style.width = "";
+    svg.style.height = "";
+  }
+
+  // ---------- Answer parsing ----------
+  function parseKey(str) {
+    const m = str.trim().match(/^([A-Ga-g])\s*(#|♯|b|♭|-?\s*sharp|-?\s*flat)?\s*(.*)$/i);
+    if (!m) return null;
+    const letter = LETTERS.indexOf(m[1].toUpperCase());
+    let acc = 0;
+    if (m[2]) acc = /#|♯|sharp/i.test(m[2]) ? 1 : -1;
+    const rest = m[3].trim();
+    let mode = null;
+    if (rest === "") mode = null;
+    else if (rest === "M" || /^(major|maj|ma)\.?$/i.test(rest)) mode = "major";
+    else if (rest === "m" || /^(minor|min|mi)\.?$/i.test(rest)) mode = "minor";
+    else return null;
+    return { letter, acc, mode };
+  }
+
+  const TRIAD_FIGS = { "": 0, "5": 0, "53": 0, "6": 1, "63": 1, "64": 2 };
+  const SEV_FIGS = { "7": 0, "75": 0, "73": 0, "753": 0, "65": 1, "653": 1, "43": 2, "643": 2, "42": 3, "642": 3, "2": 3 };
+
+  function parseRN(str) {
+    let s = str.trim().replace(/\s+/g, "");
+    s = s.replace(/\/o/g, "ø").replace(/[Øø%]/g, "ø").replace(/[°º˚]/g, "o");
+    s = s.replace(/^[b#♭♯]+/, "");
+    const m = s.match(/^(VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i)([oø+]?)([\d/]*)([oø+]?)$/);
+    if (!m) return null;
+    if (m[2] && m[4]) return null;
+    const numeral = m[1];
+    const sym = m[2] || m[4];
+    const fig = m[3].replace(/\//g, "");
+    const deg = NUMERALS.indexOf(numeral.toUpperCase());
+    const upper = numeral === numeral.toUpperCase();
+    let inv, quality;
+    if (fig in SEV_FIGS) {
+      inv = SEV_FIGS[fig];
+      if (upper && !sym) quality = "Mm7";
+      else if (!upper && !sym) quality = "mm7";
+      else if (!upper && sym === "o") quality = "dd7";
+      else if (!upper && sym === "ø") quality = "hd7";
+      else quality = "other";
+    } else if (fig in TRIAD_FIGS) {
+      inv = TRIAD_FIGS[fig];
+      if (upper && !sym) quality = "M";
+      else if (!upper && !sym) quality = "m";
+      else if (!upper && sym === "o") quality = "d";
+      else if (upper && sym === "+") quality = "aug";
+      else quality = "other";
+    } else return null;
+    return { deg, quality, inv };
+  }
+
+  // ---------- UI ----------
+  const $ = id => document.getElementById(id);
+  const keyInput = $("keyInput"), rnInput = $("rnInput");
+  const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Correct"><path d="M4 12.5l5 5L20 6.5"/></svg>';
+  const CROSS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-label="Incorrect"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  let ex, streak = 0, keyOK = false, rnOK = false, revealed = false;
+
+  function setMark(which, ok, msg) {
+    const input = which === "key" ? keyInput : rnInput;
+    const mark = $(which + "Mark"), m = $(which + "Msg");
+    mark.className = "mark " + (ok ? "ok" : "no");
+    mark.innerHTML = ok ? CHECK : CROSS;
+    input.classList.toggle("ok", ok);
+    input.classList.toggle("no", !ok);
+    m.className = "msg " + (ok ? "ok" : "no");
+    m.textContent = msg;
+  }
+  function clearMark(which) {
+    const input = which === "key" ? keyInput : rnInput;
+    $(which + "Mark").innerHTML = "";
+    $(which + "Msg").textContent = "";
+    input.classList.remove("ok", "no");
+  }
+
+  function check() {
+    if (revealed) return;
+    const k = parseKey(keyInput.value);
+    if (!k) setMark("key", false, keyInput.value.trim() ? "That isn't a key name I recognize. Try again, e.g. “B♭ major” or “c# minor”." : "Enter the key, then try again.");
+    else if (k.letter === ex.tonic.letter && k.acc === ex.tonic.acc && (!k.mode || k.mode === ex.mode)) { keyOK = true; setMark("key", true, "Correct."); }
+    else setMark("key", false, "Not quite. Check the key signature and the mode, then try again.");
+
+    const r = parseRN(rnInput.value);
+    if (!r) setMark("rn", false, rnInput.value.trim() ? "I can't read that numeral. Try again with a format like V65, vii°7 or ii6." : "Enter the Roman numeral and figure, then try again.");
+    else if (r.deg === ex.deg && r.quality === ex.quality && r.inv === ex.inv) { rnOK = true; setMark("rn", true, "Correct."); }
+    else setMark("rn", false, "Not quite. Check the root, quality and bass note, then try again.");
+
+    keyInput.disabled = keyOK;
+    rnInput.disabled = rnOK;
+    if (keyOK && rnOK) {
+      streak++;
+      finish();
+    } else {
+      (keyOK ? rnInput : keyInput).focus();
+      (keyOK ? rnInput : keyInput).select();
+    }
+  }
+
+  function finish() {
+    $("streak").textContent = "Streak " + streak;
+    $("checkBtn").hidden = true;
+    $("revealBtn").hidden = true;
+    $("nextBtn").hidden = false;
+    $("nextBtn").focus();
+  }
+
+  function reveal() {
+    revealed = true;
+    streak = 0;
+    const keyName = pitchName(ex.tonic) + " " + ex.mode;
+    $("answer").innerHTML = `${keyName}: ${romanHTML(ex.deg, ex.quality, ex.inv)}`;
+    $("answer").hidden = false;
+    keyInput.disabled = rnInput.disabled = true;
+    finish();
+  }
+
+  function next() {
+    ex = generate();
+    keyOK = rnOK = revealed = false;
+    keyInput.value = rnInput.value = "";
+    keyInput.disabled = rnInput.disabled = false;
+    clearMark("key"); clearMark("rn");
+    $("answer").hidden = true;
+    $("checkBtn").hidden = false;
+    $("revealBtn").hidden = false;
+    $("nextBtn").hidden = true;
+    $("mode").textContent = ex.mode === "major" ? "Major" : "Minor";
+    render(ex);
+    keyInput.focus();
+  }
+
+  $("form").addEventListener("submit", e => { e.preventDefault(); check(); });
+  $("nextBtn").addEventListener("click", next);
+  $("revealBtn").addEventListener("click", reveal);
+
+  next();
+})();
+</script>
+</body>
+</html>
