@@ -55,6 +55,9 @@
     display: grid;
     gap: 1.25rem;
   }
+  .home { justify-self: start; font-size: 0.85rem; font-weight: 500; color: var(--accent); text-decoration: none; }
+  .home:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .home:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; border-radius: 2px; }
   header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
   h1 {
     font-family: var(--font-body);
@@ -149,6 +152,7 @@
 </head>
 <body>
 <main>
+  <a class="home" href="/">&larr; All drills</a>
   <header>
     <h1>Roman Numeral Drill</h1>
     <span class="streak" id="streak">Streak 0</span>
